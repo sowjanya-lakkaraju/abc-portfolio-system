@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model UserDetail {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  emailAddress String   @map("email_address")
+  createdOn    DateTime @default(now()) @map("created_on")
+  createdBy    String   @map("created_by")
+  modifiedOn   DateTime @updatedAt @map("modified_on")
+  modifiedBy   String   @map("modified_by")
+
+  userLogins   UserLoginDetail[]
+
+  @@map("user_detail")
+}
+
+model UserLoginDetail {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userDetailId String   @map("id_user_detail") @db.ObjectId
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  emailAddress String   @map("email_address")
+  userStatus   String   @map("user_status")
+  createdOn    DateTime @default(now()) @map("created_on")
+  createdBy    String   @map("created_by")
+  modifiedOn   DateTime @updatedAt @map("modified_on")
+  modifiedBy   String   @map("modified_by")
+
+  userDetail    UserDetail      @relation(fields: [userDetailId], references: [id])
+  orders        OrderDetail[]
+  accounts      AccountDetail[]
+  auditActions  AuditAction[]
+
+  @@map("user_login_detail")
+}
+
+model SecurityDetail {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  securityName String        @map("security_name")
+  value        Int           @map("value")
+  
+  orders       OrderDetail[]
+
+  @@map("security_detail")
+}
+
+model OrderDetail {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  securityDetailId String   @map("id_security_detail") @db.ObjectId
+  orderRefNo       String   @map("order_ref_no")
+  orderStatus      String   @map("order_status")
+  transactionType  String   @map("transaction_type")
+  orderValue       String   @map("order_value")
+  quantity         Int?     @map("quantity")
+  orderDate        DateTime @default(now()) @map("order_date")
+  createdOn        DateTime @default(now()) @map("created_on")
+  createdBy        String   @map("created_by") @db.ObjectId
+
+  securityDetail SecurityDetail    @relation(fields: [securityDetailId], references: [id])
+  creator        UserLoginDetail   @relation(fields: [createdBy], references: [id])
+  accounts       AccountDetail[]
+
+  @@map("order_detail")
+}
+
+model AccountDetail {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userLoginDetailId String   @map("id_user_login_detail") @db.ObjectId
+  credit            Int      @map("credit")
+  debit             Int      @map("debit")
+  runningBalance    Int      @default(10000) @map("running_balance")
+  orderDetailId     String   @map("id_order_detail") @db.ObjectId
+  createdOn         DateTime @default(now()) @map("created_on")
+  createdBy         String   @map("created_by") @db.ObjectId
+
+  userLoginDetail UserLoginDetail @relation(fields: [userLoginDetailId], references: [id])
+  orderDetail     OrderDetail     @relation(fields: [orderDetailId], references: [id])
+
+  @@map("account_detail")
+}
+
+model AuditAction {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userLoginDetailId String   @map("id_user_login_detail") @db.ObjectId
+  userAction        String   @map("user_action")
+  startDateTime     DateTime @map("start_date_time")
+  endDateTime       DateTime @map("end_date_time")
+
+  userLoginDetail UserLoginDetail @relation(fields: [userLoginDetailId], references: [id])
+
+  @@map("audit_action")
+}
